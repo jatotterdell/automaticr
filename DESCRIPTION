@@ -14,11 +14,13 @@ Depends:
 Suggests: 
     testthat (>= 2.1.0)
 Imports: 
-    data.table,
     methods,
     Rcpp (>= 0.12.0),
     rstan (>= 2.18.1),
-    rstantools (>= 2.0.0)
+    readr,
+    tibble,
+    dplyr,
+    tidyr
 RoxygenNote: 6.1.1
 Biarch: true
 SystemRequirements: GNU make
