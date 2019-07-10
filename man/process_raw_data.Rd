@@ -4,10 +4,13 @@
 \alias{process_raw_data}
 \title{Process raw data}
 \usage{
-process_raw_data(raw_dat)
+process_raw_data(raw_dat, ref_date)
 }
 \arguments{
 \item{raw_dat}{The raw data.}
+
+\item{ref_date}{The reference date from which to calculate how much time has passed since the vaccine due date.
+This should probably be the date on which the function was called, i.e. \code{Sys.Date()}.}
 }
 \value{
 A \code{data.table}.

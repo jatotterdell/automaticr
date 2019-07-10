@@ -107,6 +107,22 @@ read_interim_log <- function(file) {
   }
 }
 
+#' Update the interim log file
+#'
+#' The purpose of the interim log file is to track the current
+#' interim, allocation probabilities, and allocation indicators,
+#' as well as record when interims were undertaken and with
+#' what sample size.
+#'
+#' @param file The path to the interim log file
+#' @param date The date of the interim analysis
+#' @param interim The interim sequence number
+#' @param n_analysed The sample size analysed
+#' @param prob_alloc The allocation probability vector
+#' @param is_alloc Flag indicating arms which will receive allocations up to the next interim.
+#'
+#' @return NULL
+#' @export
 update_interim_log <- function(file, date, interim, n_analysed, prob_alloc, is_alloc) {
   if(!file.exists(file))
     stop(paste(file, "not found."))
@@ -125,6 +141,7 @@ update_interim_log <- function(file, date, interim, n_analysed, prob_alloc, is_a
       temp, variable, arm),
     temp, value)
   readr::write_csv(tb, file, append = TRUE)
+  return(invisible(NULL))
 }
 
 #' Generate an allocation sequence
@@ -144,7 +161,7 @@ generate_allocation_sequence <- function(num_alloc, alloc_prob, seed) {
 
 #' Write allocation sequence to file
 #'
-#' @param file Filepath
+#' @param file Filepath for allocation sequence file
 #' @param alloc_seq The allocation sequence
 #' @param interim Integer giving interim from which allocation was generated
 #'
@@ -153,7 +170,7 @@ generate_allocation_sequence <- function(num_alloc, alloc_prob, seed) {
 write_allocation_sequence <- function(file, alloc_seq, interim) {
   seq_dat <- tibble::tibble(
     seq_id = sprintf("%02d_%04d", interim, 1:length(alloc_seq)),
-    randomisation_outcome = alloc_se
+    randomisation_outcome = alloc_seq
   )
   readr::write_csv(seq_dat, file)
   message(paste("New allocation sequence written to", file))
