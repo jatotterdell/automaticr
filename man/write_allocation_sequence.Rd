@@ -7,7 +7,7 @@
 write_allocation_sequence(file, alloc_seq, interim)
 }
 \arguments{
-\item{file}{Filepath}
+\item{file}{Filepath for allocation sequence file}
 
 \item{alloc_seq}{The allocation sequence}
 

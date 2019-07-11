@@ -31,6 +31,8 @@ init_interim_log <- function(file) {
   return(invisible(NULL))
 }
 
+
+
 #' Read raw data
 #'
 #' @param file The path to the database data file.
@@ -51,6 +53,8 @@ read_raw_data <- function(file) {
   return(dat)
 }
 
+
+
 #' Process raw data
 #'
 #' Needs to check raw data for any coding issues etc.
@@ -68,16 +72,27 @@ process_raw_data <- function(raw_dat, ref_date) {
     stop("raw_dat has zero rows.")
 
   dat <- dplyr::mutate(raw_dat,
+    current_eligible_vaccination =
+      factor(current_eligible_vaccination,
+             levels = paste0(c(2,4,6,12,18,48), "m")),
+    randomisation_outcome =
+      factor(randomisation_outcome,
+             levels = 1:13, labels = sprintf("%02d", 1:13)),
     date_vaccine_due = lubridate::as_date(date_vaccine_due),
     date_of_vaccination_administration = lubridate::as_date(date_of_vaccination_administration),
     time_to_vax = date_of_vaccination_administration - date_vaccine_due,
     time_since_due = ref_date - date_vaccine_due,
     vax_past_due = time_since_due > 28,
-    on_time = time_to_vax <= 28,
-    on_time = dplyr::if_else(vax_past_due, FALSE, NA)
+    on_time = dplyr::case_when(
+      time_to_vax <= 28 ~ 1,
+      time_to_vax > 28 ~ 0,
+      is.na(time_to_vax) & vax_past_due ~ 0,
+      TRUE ~ NA_real_)
   )
   return(dat)
 }
+
+
 
 #' Return index records for \code{parent_id}
 #'
@@ -93,6 +108,64 @@ get_index_data <- function(dat) {
   dplyr::top_n(dplyr::group_by(dat, parent_id), 1, date_vaccine_due)
 }
 
+
+
+#' Aggregate the index data set
+#'
+#' For modelling purposes, the data should be aggregated according to
+#' \code{randomisation_outcome} and \code{current_eligible_vaccination}
+#' which will be covariates in the model.
+#'
+#' @param dat The index data set as output from \code{get_index_data}.
+#'
+#' @return A \code{tibble} of aggregated data from \code{dat}.
+#' @export
+aggregate_data <- function(dat) {
+  dplyr::arrange(
+    dplyr::summarise(
+      dplyr::group_by(
+        dplyr::filter(dat, !is.na(on_time)),
+        randomisation_outcome, current_eligible_vaccination),
+      y = sum(on_time), n = dplyr::n()),
+  randomisation_outcome, current_eligible_vaccination)
+}
+
+
+
+#' Estimate model parameters
+#'
+#' @param agg_dat Aggregated data from \code{aggregate_data}
+#' @param seed PRNG seed for Stan fit
+#'
+#' @return A Stan model object
+#' @export
+estimate_model <- function(agg_dat, seed) {
+  # Xadd <- model.matrix( ~ current_eligible_vaccination, data = agg_dat)[, -1]
+  # X <- automaticr:::design_matrix[agg_dat$randomisation_outcome, ]
+  # X <- cbind(X, Xadd)
+  mod <- brms::brm(
+    y | trials(n) ~ 0 + randomisation_outcome + current_eligible_vaccination,
+    data = agg_dat, family = binomial(), seed = seed)
+  # mod2 <- brms::brm(
+  #   y | trials(n) ~ .,
+  #   data = cbind.data.frame(agg_dat[, c("y", "n")], X), family = binomial())
+  return(mod)
+}
+
+
+
+#' Calculate probability best
+#'
+#' @param mod Stan model
+#' @return Numeric vector giving probability each arm is best
+#' @export
+get_posterior_quantities <- function(mod) {
+  draws <- as.matrix(mod, par = "randomisation_outcome")
+  prob_best(draws)
+}
+
+
+
 #' Read interim log file.
 #'
 #' @param file Path to interim log.
@@ -106,6 +179,8 @@ read_interim_log <- function(file) {
     return(readr::read_csv(file))
   }
 }
+
+
 
 #' Update the interim log file
 #'
@@ -144,6 +219,8 @@ update_interim_log <- function(file, date, interim, n_analysed, prob_alloc, is_a
   return(invisible(NULL))
 }
 
+
+
 #' Generate an allocation sequence
 #'
 #' @param num_alloc Number of allocations to generate, i.e. length of sequence
@@ -158,6 +235,8 @@ generate_allocation_sequence <- function(num_alloc, alloc_prob, seed) {
   rm(.Random.seed, envir = .GlobalEnv) # Decouple future RN.
   return(alloc_seq)
 }
+
+
 
 #' Write allocation sequence to file
 #'

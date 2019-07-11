@@ -18,20 +18,38 @@ interim_schedule <- data.frame(
                 61873, 64577, 66233, 21843, 71857, 64513, 66213, 67217, 21899, 73803)
 )
 
+intervention_map <- data.frame(
+  randomisation_outcome = sprintf("%02d", 1:13),
+  control = c(1, rep(NA, 12)),
+  message = c(NA, rep(1:4, each = 3)),
+  timing = c(NA, rep(1:3, times = 4))
+)
+
+X = cbind(c(1, rep(0, 12)), c(0, rep(1, 12)))
+colnames(X) <- c("ctr", "trt")
+Z1 <- rbind(0, kronecker(diag(1, 4), rep(1, 3)))
+colnames(Z1) <- paste0("m", 1:4)
+Z2 <- rbind(0, kronecker(rep(1,4), diag(1,3)))
+colnames(Z2) <- paste0("t", 1:3)
+Z3 <- rbind(0, diag(1, 12))
+colnames(Z3) <- paste0(rep(colnames(Z1), each = 3), rep(colnames(Z2), times = 4))
 design_data <- list(
   K = 2,
   N = 13,
   L1 = 3,
   L2 = 4,
   L3 = 12,
-  X = cbind(c(1, rep(0, 12)), c(0, rep(1, 12))),
-  Z1 = rbind(0, kronecker(rep(1,4), diag(1,3))),
-  Z2 = rbind(0, kronecker(diag(1, 4), rep(1, 3))),
-  Z3 = rbind(0, diag(1, 12))
+  X = X,
+  Z1 = Z1,
+  Z2 = Z2,
+  Z3 = Z3
 )
+
+design_matrix <- do.call(cbind, list(X, Z1, Z2, Z3))
 
 usethis::use_data(
   trial_params,
   interim_schedule,
   design_data,
+  design_matrix,
   internal = TRUE, overwrite = TRUE)

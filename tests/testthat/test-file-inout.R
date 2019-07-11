@@ -14,12 +14,14 @@ teardown({
   unlink(tmp_alloc)
 })
 
-test_that("read accumulating data", {
+test_that("read/process/aggregate accumulating data", {
   dat <- read_raw_data(tmp)
   expect_equal(nrow(dat), nrow(sim_dat))
 
   proc_dat <- process_raw_data(dat, Sys.Date())
   expect_equal(nrow(dat), nrow(sim_dat))
+
+  agg_dat <- aggregate_data(proc_dat)
 })
 
 test_that("read/write/update interim log", {

@@ -1,3 +1,9 @@
+#' Probability a column is maximum
+#'
+#' @param mat Matrix of MC draws
+#'
+#' @return Numeric vector giving probability each column is the maximum
+#' @export
 prob_best <- function(mat) {
   prop.table(table(factor(max.col(mat), levels = 1:ncol(mat))))
 }
