@@ -20,9 +20,9 @@ interim_schedule <- data.frame(
 
 intervention_map <- data.frame(
   randomisation_outcome = sprintf("%02d", 1:13),
-  control = c(1, rep(NA, 12)),
-  message = c(NA, rep(1:4, each = 3)),
-  timing = c(NA, rep(1:3, times = 4))
+  control = c(1, rep(0, 12)),
+  message = c(0, rep(1:4, each = 3)),
+  timing = c(0, rep(1:3, times = 4))
 )
 
 X = cbind(c(1, rep(0, 12)), c(0, rep(1, 12)))
@@ -52,4 +52,5 @@ usethis::use_data(
   interim_schedule,
   design_data,
   design_matrix,
+  intervention_map,
   internal = TRUE, overwrite = TRUE)

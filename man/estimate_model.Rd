@@ -4,12 +4,14 @@
 \alias{estimate_model}
 \title{Estimate model parameters}
 \usage{
-estimate_model(agg_dat, seed)
+estimate_model(agg_dat, seed, ...)
 }
 \arguments{
 \item{agg_dat}{Aggregated data from \code{aggregate_data}}
 
 \item{seed}{PRNG seed for Stan fit}
+
+\item{...}{Other arguments to brms/sampling.}
 }
 \value{
 A Stan model object

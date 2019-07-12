@@ -121,13 +121,14 @@ get_index_data <- function(dat) {
 #' @return A \code{tibble} of aggregated data from \code{dat}.
 #' @export
 aggregate_data <- function(dat) {
-  dplyr::arrange(
+  agg_dat <- dplyr::ungroup(dplyr::arrange(
     dplyr::summarise(
       dplyr::group_by(
         dplyr::filter(dat, !is.na(on_time)),
         randomisation_outcome, current_eligible_vaccination),
-      y = sum(on_time), n = dplyr::n()),
-  randomisation_outcome, current_eligible_vaccination)
+      y = sum(on_time), trials = dplyr::n()),
+  randomisation_outcome, current_eligible_vaccination))
+  dplyr::left_join(agg_dat, automaticr:::intervention_map, by = "randomisation_outcome")
 }
 
 
@@ -136,16 +137,17 @@ aggregate_data <- function(dat) {
 #'
 #' @param agg_dat Aggregated data from \code{aggregate_data}
 #' @param seed PRNG seed for Stan fit
+#' @param ... Other arguments to brms/sampling.
 #'
 #' @return A Stan model object
 #' @export
-estimate_model <- function(agg_dat, seed) {
+estimate_model <- function(agg_dat, seed, ...) {
   # Xadd <- model.matrix( ~ current_eligible_vaccination, data = agg_dat)[, -1]
   # X <- automaticr:::design_matrix[agg_dat$randomisation_outcome, ]
   # X <- cbind(X, Xadd)
   mod <- brms::brm(
     y | trials(n) ~ 0 + randomisation_outcome + current_eligible_vaccination,
-    data = agg_dat, family = binomial(), seed = seed)
+    data = agg_dat, family = binomial(), seed = seed, ...)
   # mod2 <- brms::brm(
   #   y | trials(n) ~ .,
   #   data = cbind.data.frame(agg_dat[, c("y", "n")], X), family = binomial())
@@ -156,12 +158,27 @@ estimate_model <- function(agg_dat, seed) {
 
 #' Calculate probability best
 #'
-#' @param mod Stan model
-#' @return Numeric vector giving probability each arm is best
+#' @param draws MC model draws for arm means
+#' @param sampsize Sample size for each arm
+#' @return A \code{tibble} giving posterior quantities of interest for each arm.
 #' @export
-get_posterior_quantities <- function(mod) {
-  draws <- as.matrix(mod, par = "randomisation_outcome")
-  prob_best(draws)
+get_posterior_quantities <- function(draws, sampsize) {
+  arm_post_summ <- tibble(
+    sampsize =sampsize,
+    mean = apply(draws, 2, mean),
+    variance = diag(var(draws)),
+    pbest = prob_best(draws)
+  )
+  arm_post_summ <- dplyr::mutate(
+    arm_post_summ,
+    alloc_prob = brar(
+      pbest,
+      sampsize,
+      variance,
+      automaticr:::trial_params$zero_alloc_thres,
+      automaticr:::trial_params$fix_ctrl_alloc),
+    is_alloc = as.numeric(alloc_prob > 0))
+  return(arm_post_summ)
 }
 
 

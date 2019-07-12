@@ -4,13 +4,15 @@
 \alias{get_posterior_quantities}
 \title{Calculate probability best}
 \usage{
-get_posterior_quantities(mod)
+get_posterior_quantities(draws, sampsize)
 }
 \arguments{
-\item{mod}{Stan model}
+\item{draws}{MC model draws for arm means}
+
+\item{sampsize}{Sample size for each arm}
 }
 \value{
-Numeric vector giving probability each arm is best
+A \code{tibble} giving posterior quantities of interest for each arm.
 }
 \description{
 Calculate probability best

@@ -21,7 +21,7 @@ generate_trial_data <- function(n, seed) {
   vax_date <- as.character(vax_due +
                              stats::rexp(n, effect[randomisation_outcome]))
   vax_date[vax_date >= Sys.Date()] <- "null"
-  data.table::data.table(
+  tibble::tibble(
     parent_id = sample(L, n, replace = TRUE),
     child_id = sample(L, n, replace = TRUE),
     clinic_id = sample(L, n, replace = TRUE),
@@ -35,7 +35,6 @@ generate_trial_data <- function(n, seed) {
     sms_delivery_failure_indicator = "success",
     date_of_vaccination_administration = vax_date,
     product_name_of_vaccine_administered="product x",
-    opted_out = FALSE,
-    key = c("parent_id", "date_vaccine_due")
+    opted_out = FALSE
   )
 }
