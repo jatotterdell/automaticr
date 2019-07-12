@@ -12,7 +12,7 @@
 generate_trial_data <- function(n, seed) {
   set.seed(seed)
   effect <- seq(1/35, 1/28, length.out = 13)
-  l <- expand.grid(0:9, 0:9, LETTERS, stringsAsFactors = FALSE)
+  l <- expand.grid(0:9, 0:9, 0:9, LETTERS, stringsAsFactors = FALSE)
   L <- apply(l, 1, function(x) paste0(rev(x),  collapse = ''))
   randomisation_outcome <- sample(1:13, n, replace = TRUE)
   vax_due <- sample(seq(Sys.Date() - 90, Sys.Date(), by = "1 day"), n, replace = T)
