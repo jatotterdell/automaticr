@@ -9,3 +9,5 @@ Required functionality is:
   * Output of updated allocation probabilities and allocation sequence based on interim analysis results
   * Tracking of interim analysis logs
   * Interim analysis report generation.
+  
+Trial specific parameters are stored internally in `sysdata.rda`.
