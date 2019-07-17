@@ -41,7 +41,7 @@ init_interim_log <- function(file) {
 #' @export
 read_raw_data <- function(file) {
   if(!file.exists(file)) {
-    stop(paste(file, "file not found."))
+    warning(paste(file, "file not found."))
     quit(status = 0)
   } else {
     dat <- readr::read_csv(
@@ -49,7 +49,7 @@ read_raw_data <- function(file) {
       na = c("null", "NA", ""))
   }
   if(nrow(dat) == 0) {
-    stop(paste(file, "has no records."))
+    warning(paste(file, "has no records."))
     quit(status = 0)
   }
   return(dat)
@@ -193,7 +193,8 @@ get_posterior_quantities <- function(draws, sampsize) {
 #' @export
 read_interim_log <- function(file) {
   if(!file.exists(file)) {
-    stop(paste(file, "not found."))
+    warning(paste(file, "not found. Exiting session."))
+    quit(status = 0)
   } else {
     return(readr::read_csv(file))
   }
@@ -218,8 +219,10 @@ read_interim_log <- function(file) {
 #' @return NULL
 #' @export
 update_interim_log <- function(file, date, interim, n_analysed, prob_alloc, is_alloc) {
-  if(!file.exists(file))
-    stop(paste(file, "not found."))
+  if(!file.exists(file)) {
+    warning(paste(file, "not found. Exiting session."))
+    quit(status = 0)
+  }
 
   tb <- tibble::tibble(
     interim_date = date,
