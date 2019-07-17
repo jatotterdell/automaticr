@@ -42,14 +42,16 @@ init_interim_log <- function(file) {
 read_raw_data <- function(file) {
   if(!file.exists(file)) {
     stop(paste(file, "file not found."))
+    quit(status = 0)
   } else {
     dat <- readr::read_csv(
       file,
       na = c("null", "NA", ""))
   }
-  if(nrow(dat) == 0)
+  if(nrow(dat) == 0) {
     stop(paste(file, "has no records."))
-
+    quit(status = 0)
+  }
   return(dat)
 }
 
