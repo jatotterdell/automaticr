@@ -22,7 +22,8 @@ intervention_map <- data.frame(
   randomisation_outcome = sprintf("%02d", 1:13),
   control = c(1, rep(0, 12)),
   message = c(0, rep(1:4, each = 3)),
-  timing = c(0, rep(1:3, times = 4))
+  timing = c(0, rep(1:3, times = 4)),
+  arm = 1:13
 )
 
 X = cbind(c(1, rep(0, 12)), c(0, rep(1, 12)))
