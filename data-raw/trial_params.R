@@ -23,7 +23,7 @@ intervention_map <- data.frame(
   control = c(1, rep(0, 12)),
   message = c(0, rep(1:4, each = 3)),
   timing = c(0, rep(1:3, times = 4)),
-  arm = 1:13
+  arm = 0:12
 )
 
 X = cbind(c(1, rep(0, 12)), c(0, rep(1, 12)))

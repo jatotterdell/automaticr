@@ -134,27 +134,35 @@ aggregate_data <- function(dat) {
 }
 
 
-
-#' Estimate model parameters
+#' Make data list for input into Stan model
 #'
-#' @param agg_dat Aggregated data from \code{aggregate_data}
-#' @param seed PRNG seed for Stan fit
-#' @param ... Other arguments to brms/sampling.
-#'
-#' @return A Stan model object
+#' @param agg_dat Aggregated data as outcome form aggregate_data.
+#' @return A list of data for input int \code{rstan::sampling}.
 #' @export
-estimate_model <- function(agg_dat, seed, ...) {
-  # Xadd <- model.matrix( ~ current_eligible_vaccination, data = agg_dat)[, -1]
-  # X <- automaticr:::design_matrix[agg_dat$randomisation_outcome, ]
-  # X <- cbind(X, Xadd)
-  mod <- brms::brm(
-    y | trials(n) ~ 0 + randomisation_outcome + current_eligible_vaccination,
-    data = agg_dat, family = binomial(), seed = seed, ...)
-  # mod2 <- brms::brm(
-  #   y | trials(n) ~ .,
-  #   data = cbind.data.frame(agg_dat[, c("y", "n")], X), family = binomial())
-  return(mod)
+make_model_data <- function(agg_dat) {
+  X <- model.matrix( ~ droplevels(current_eligible_vaccination),
+                     data = agg_dat,
+                     contrasts.arg = list(`droplevels(current_eligible_vaccination)` = "contr.sum"))[, -1]
+
+  return(list(
+    N = length(agg_dat$y),
+    K = ncol(X),
+    L1 = 4,
+    L2 = 3,
+    L3 = 12,
+    y = agg_dat$y,
+    n = agg_dat$trials,
+    X = X,
+    control = agg_dat$control,
+    message = agg_dat$message,
+    timing = agg_dat$timing,
+    arm = agg_dat$arm,
+    prior_only = 0)
+  )
 }
+
+
+
 
 
 
