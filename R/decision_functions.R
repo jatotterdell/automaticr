@@ -8,6 +8,7 @@ prob_best <- function(mat) {
   as.numeric(prop.table(table(factor(max.col(mat), levels = 1:ncol(mat)))))
 }
 
+
 #' Probability best of linear transformation
 #'
 #' For a supplied linear transform, A, of MC draws, determine
@@ -49,51 +50,6 @@ prob_all_noninferior <- function(mat, colvec_best, eps) {
 }
 
 
-#' Re-distribute allocations
-#'
-#' When some allocations a set to zero for being below some threshold,
-#' re-distribute their mass amongst the remaining arms
-#'
-#' @param w The current allocation weights
-#' @param zero_ind Indices for arms which will receive zero allocation
-#' @return An updated vector of allocation weights
-#' @export
-distribute_alloc <- function(w, zero_ind) {
-  w[zero_ind] <- 0
-  w[-zero_ind] <- w[-zero_ind] / sum(w[-zero_ind])
-  return(w)
-}
-
-
-#' Bayesian response adaptive randomisation
-#'
-#' @param pbest Probability arm is best
-#' @param sampsize Current sample size allocated to arm
-#' @param variance Current posterior variance
-#' @param no_alloc_thres Threshold for setting allocation to zero
-#' @param fix_ctrl Fix allocation to control by this amount
-#'
-#' @return A numeric vector giving the BRAR allocation probabilities
-#' @export
-brar <- function(pbest, sampsize, variance, no_alloc_thres, fix_ctrl = NULL) {
-  stopifnot(all(pbest >= 0))
-  stopifnot(all(sampsize > 0))
-  m <- length(pbest)
-  r <- sqrt(pbest * variance / sampsize)
-  r[which(pbest < no_alloc_thres)] <- 0
-  w <- r / sum(r)
-
-  if(is.null(fix_ctrl)) {
-    return(w)
-  } else {
-    if(!(fix_ctrl > 0 & fix_ctrl < 1)) stop("fix_ctrl must be between 0 and 1.")
-    # Re-distribute
-    w[1] <- fix_ctrl
-    w[-1] <- w[-1] / sum(w[-1]) * (1 - w[1])
-    return(w)
-  }
-}
-
 #' Calculate matrix of pairwise differences of MC draws
 #'
 #' @param mat The matrix of draws
@@ -110,6 +66,7 @@ pairwise_diff <- function(mat, trans = I) {
   return(pair_mat)
 }
 
+
 #' Make a pairwise comparison between parameter draws
 #'
 #' @param mat Matrix of parameter draws
@@ -120,6 +77,7 @@ pairwise_comp <- function(mat, eps = 0) {
   pmat <- pairwise_diff(mat)
   apply(pmat, 2, function(x) mean(x > eps))
 }
+
 
 #' Calcualte probability that each column is superior to a reference column.
 #'

@@ -32,7 +32,6 @@ init_interim_log <- function(file) {
 }
 
 
-
 #' Read raw data
 #'
 #' @param file The path to the database data file.
@@ -54,7 +53,6 @@ read_raw_data <- function(file) {
   }
   return(dat)
 }
-
 
 
 #' Process raw data
@@ -95,7 +93,6 @@ process_raw_data <- function(raw_dat, ref_date) {
 }
 
 
-
 #' Return index records for \code{parent_id}
 #'
 #' Primary analysis will be based on only index records for \code{parent_id}.
@@ -109,7 +106,6 @@ process_raw_data <- function(raw_dat, ref_date) {
 get_index_data <- function(dat) {
   dplyr::top_n(dplyr::group_by(dat, parent_id), 1, date_vaccine_due)
 }
-
 
 
 #' Aggregate the index data set
@@ -162,10 +158,6 @@ make_model_data <- function(agg_dat) {
 }
 
 
-
-
-
-
 #' Calculate probability best
 #'
 #' @param draws MC model draws for arm means
@@ -192,7 +184,6 @@ get_posterior_quantities <- function(draws, sampsize) {
 }
 
 
-
 #' Read interim log file.
 #'
 #' @param file Path to interim log.
@@ -207,7 +198,6 @@ read_interim_log <- function(file) {
     return(readr::read_csv(file))
   }
 }
-
 
 
 #' Update the interim log file
@@ -250,7 +240,6 @@ update_interim_log <- function(file, date, interim, n_analysed, prob_alloc, is_a
 }
 
 
-
 #' Generate an allocation sequence
 #'
 #' @param num_alloc Number of allocations to generate, i.e. length of sequence
@@ -265,7 +254,6 @@ generate_allocation_sequence <- function(num_alloc, alloc_prob, seed) {
   rm(.Random.seed, envir = .GlobalEnv) # Decouple future RN.
   return(alloc_seq)
 }
-
 
 
 #' Write allocation sequence to file

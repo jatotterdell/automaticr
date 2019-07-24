@@ -57,6 +57,7 @@ mass_weighted_urn_design <- function(
     selection_prob = p))
 }
 
+
 #' Bayesian adaptive randomisation method 1
 #'
 #' @param p The probability each arm is best
@@ -80,6 +81,7 @@ brar1 <- function(p, no_alloc_thres = 0.01, fix_ctrl = NULL) {
     return(w)
   }
 }
+
 
 #' Bayesian adaptive randomisation method 2
 #'
@@ -106,6 +108,7 @@ brar2 <- function(p, n, N, no_alloc_thres = 0.01, fix_ctrl = NULL) {
     return(w)
   }
 }
+
 
 #' Bayesian adaptive randomisation method 3
 #'
@@ -152,4 +155,50 @@ update_alloc <- function(p, zero_ind) {
   p[zero_ind] <- 0
   p[-zero_ind] <- p[-zero_ind] / sum(p[-zero_ind])
   return(p)
+}
+
+
+#' Re-distribute allocations
+#'
+#' When some allocations a set to zero for being below some threshold,
+#' re-distribute their mass amongst the remaining arms
+#'
+#' @param w The current allocation weights
+#' @param zero_ind Indices for arms which will receive zero allocation
+#' @return An updated vector of allocation weights
+#' @export
+distribute_alloc <- function(w, zero_ind) {
+  w[zero_ind] <- 0
+  w[-zero_ind] <- w[-zero_ind] / sum(w[-zero_ind])
+  return(w)
+}
+
+
+#' Bayesian response adaptive randomisation
+#'
+#' @param pbest Probability arm is best
+#' @param sampsize Current sample size allocated to arm
+#' @param variance Current posterior variance
+#' @param no_alloc_thres Threshold for setting allocation to zero
+#' @param fix_ctrl Fix allocation to control by this amount
+#'
+#' @return A numeric vector giving the BRAR allocation probabilities
+#' @export
+brar <- function(pbest, sampsize, variance, no_alloc_thres, fix_ctrl = NULL) {
+  stopifnot(all(pbest >= 0))
+  stopifnot(all(sampsize > 0))
+  m <- length(pbest)
+  r <- sqrt(pbest * variance / sampsize)
+  r[which(pbest < no_alloc_thres)] <- 0
+  w <- r / sum(r)
+
+  if(is.null(fix_ctrl)) {
+    return(w)
+  } else {
+    if(!(fix_ctrl > 0 & fix_ctrl < 1)) stop("fix_ctrl must be between 0 and 1.")
+    # Re-distribute
+    w[1] <- fix_ctrl
+    w[-1] <- w[-1] / sum(w[-1]) * (1 - w[1])
+    return(w)
+  }
 }
