@@ -11,6 +11,7 @@ init_interim_log <- function(file) {
   if(file.exists(file)) {
     stop("File already exists.")
   }
+  # general will 'message' get logged in file?
   message(paste("Initialising", file))
 
   tb <- tibble::tibble(
