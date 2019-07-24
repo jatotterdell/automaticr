@@ -2,7 +2,7 @@
 % Please edit documentation in R/decision_functions.R
 \name{prob_rank}
 \alias{prob_rank}
-\title{Probability for each rank}
+\title{Probability of each rank for each arm.}
 \usage{
 prob_rank(mat)
 }
@@ -10,7 +10,9 @@ prob_rank(mat)
 \item{mat}{Matrix of MC draws}
 }
 \value{
-Numeric square matrix giving probability each arm is ranked in each place
+Numeric square matrix giving probability each arm is ranked in each place.
+  Rows are ranks and columns are arms. For example, the first row in the matrix gives the probability
+  each arm is the best. The last row gives the probability each arm is the worst, etc.
 }
 \description{
 Rank each row and return the probability that each arm is ranked at each value

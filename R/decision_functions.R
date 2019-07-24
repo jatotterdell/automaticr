@@ -23,12 +23,14 @@ prob_best_lin <- function(mat, A) {
 }
 
 
-#' Probability for each rank
+#' Probability of each rank for each arm.
 #'
 #' Rank each row and return the probability that each arm is ranked at each value
 #'
 #' @param mat Matrix of MC draws
-#' @return Numeric square matrix giving probability each arm is ranked in each place
+#' @return Numeric square matrix giving probability each arm is ranked in each place.
+#'   Rows are ranks and columns are arms. For example, the first row in the matrix gives the probability
+#'   each arm is the best. The last row gives the probability each arm is the worst, etc.
 #' @export
 prob_rank <- function(mat) {
   k <- ncol(mat)
@@ -87,6 +89,6 @@ pairwise_comp <- function(mat, eps = 0) {
 #' @return A vector of probabilities
 #' @export
 col_comp <- function(mat, col, eps = 0) {
-  out <- colMeans(mat[, -col] > mat[, col])
+  out <- colMeans(mat[, -col] > mat[, col] + eps)
   return(out)
 }
