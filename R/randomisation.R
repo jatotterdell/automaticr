@@ -142,8 +142,14 @@ brar3 <- function(p, n, V, no_alloc_thres = 0.01, fix_ctrl = NULL, min_alloc = 0
   }
 }
 
-update_alloc <- function(w, zero_ind) {
-  w[zero_ind] <- 0
-  w[-zero_ind] <- w[-zero_ind] / sum(w[-zero_ind])
-  return(w)
+#' Update allocation probabilities if some must be set to zero
+#'
+#' @param p The allocation probabilities
+#' @param zero_ind The indices of values to be set to zero
+#' @return Updated allocation probabilities
+#' @export
+update_alloc <- function(p, zero_ind) {
+  p[zero_ind] <- 0
+  p[-zero_ind] <- p[-zero_ind] / sum(p[-zero_ind])
+  return(p)
 }
