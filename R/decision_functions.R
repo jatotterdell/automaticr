@@ -56,12 +56,12 @@ prob_all_noninferior <- function(mat, colvec_best, eps) {
 #' Spherical test that all columns are within bound delta of global mean
 #'
 #' @param mat Matrix of MC draws
-#' @param delta Equivalence bound
+#' @param eps Equivalence bound
 #' @return The probability of spherical equivalence
 #' @export
-prob_equi <- function(mat, delta, ...) {
-  dmat <- pairwise_diff(mat, ...)
-  mean(apply(dmat, 1, crossprod) < delta^2)
+prob_all_equivalent <- function(mat, eps) {
+  a <- rep(1/ncol(mat), ncol(mat)) # Linear combination for mean
+  mean(apply(sweep(mat, 1, drop(mat %*% a), `-`), 1, function(x) all(abs(x) <= eps)))
 }
 
 
