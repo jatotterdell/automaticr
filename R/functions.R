@@ -1,6 +1,8 @@
 #' Intialise the interim log
 #'
-#' Intialises the interim log based on \code{trial_params}.
+#' Intialises the interim log based on \code{trial_params} setting
+#' dates, number of treatment arms and initial randomisation
+#' probabilities.
 #' Should only be called on first build.
 #'
 #' @param file The path for the interim log file
@@ -113,7 +115,7 @@ process_raw_data <- function(raw_dat, ref_date) {
 }
 
 
-#' Return index records for \code{parent_id}
+#' Return index records (i.e. first record) for \code{parent_id}
 #'
 #' Primary analysis will be based on only index records for \code{parent_id}.
 #'
@@ -124,6 +126,11 @@ process_raw_data <- function(raw_dat, ref_date) {
 #'   due vaccination.
 #' @export
 get_index_data <- function(dat) {
+  # james, this seems to be your preferred idiom for dplyr
+  # is there a perf advantage of using this struct or is it
+  # simply personal pref? i find the %>% approach clearer because it
+  # lets me see the processing sequentially and in order of
+  # execution
   dplyr::top_n(dplyr::group_by(dat, parent_id), 1, date_vaccine_due)
 }
 
@@ -176,7 +183,7 @@ make_model_data <- function(agg_dat) {
   return(list(
     N = length(agg_dat$y),
     K = ncol(X),
-    L1 = 4,
+    L1 = 4, # should these hardcoded values be picked up from trial_params.R?
     L2 = 3,
     L3 = 12,
     y = agg_dat$y,

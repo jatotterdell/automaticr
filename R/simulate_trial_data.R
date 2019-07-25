@@ -9,9 +9,8 @@
 #' @return A \code{data.frame} of simulated data.
 #' @importFrom stats rexp
 #' @export
-generate_trial_data <- function(n, seed) {
+generate_trial_data <- function(n, seed, effect = seq(1/35, 1/28, length.out = 13)) {
   set.seed(seed)
-  effect <- seq(1/35, 1/28, length.out = 13)
   l <- expand.grid(0:9, 0:9, 0:9, LETTERS, stringsAsFactors = FALSE)
   L <- apply(l, 1, function(x) paste0(rev(x),  collapse = ''))
   randomisation_outcome <- sample(1:13, n, replace = TRUE)
@@ -21,7 +20,7 @@ generate_trial_data <- function(n, seed) {
   vax_date <- as.character(vax_due +
                              stats::rexp(n, effect[randomisation_outcome]))
   vax_date[vax_date >= Sys.Date()] <- "null"
-  tibble::tibble(
+  dt1 <- tibble::tibble(
     parent_id = sample(L, n, replace = TRUE),
     # so child and clinic id can be same as parent id? or these are just
     # dummy values that we do not rely on?
@@ -39,4 +38,6 @@ generate_trial_data <- function(n, seed) {
     product_name_of_vaccine_administered="product x",
     opted_out = FALSE
   )
+
+  dt1
 }
