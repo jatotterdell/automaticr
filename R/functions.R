@@ -22,12 +22,28 @@ init_interim_log <- function(file) {
     alloc_prob   = automaticr:::trial_params$init_allocations,
     is_alloc     = TRUE
   )
+
   tb <- tidyr::spread(
     tidyr::unite(
       tidyr::gather(tb, variable, value, -(interim_date:arm)),
       temp, variable, arm),
   temp, value)
   readr::write_csv(tb, file)
+
+  # clearer alternative?
+  # tbalt <- tibble::tibble(
+  #   interim_date = Sys.Date(),
+  #   interim_num  = 0,
+  #   nrow_data    = 0,
+  #   arm          = sprintf("%02d", 1:automaticr:::trial_params$n_arms),
+  #   alloc_prob   = automaticr:::trial_params$init_allocations,
+  #   is_alloc     = TRUE
+  # ) %>%
+  #   tidyr::gather(variable, value, -(interim_date:arm)) %>%
+  #   tidyr::unite(temp, variable, arm) %>%
+  #   tidyr::spread(temp, value)
+  #
+  # identical(tb, tbalt)
 
   return(invisible(NULL))
 }
@@ -67,6 +83,8 @@ read_raw_data <- function(file) {
 #' @return A \code{data.table}.
 #' @export
 process_raw_data <- function(raw_dat, ref_date) {
+  # raw_dat = dat
+
   if(!lubridate::is.Date(ref_date))
     stop("ref_date is not a date.")
   if(nrow(raw_dat) == 0)
@@ -74,22 +92,23 @@ process_raw_data <- function(raw_dat, ref_date) {
 
   dat <- dplyr::mutate(raw_dat,
     current_eligible_vaccination =
-      factor(current_eligible_vaccination,
-             levels = paste0(c(2,4,6,12,18,48), "m")),
+    factor(current_eligible_vaccination,
+          levels = paste0(c(2,4,6,12,18,48), "m")),
     randomisation_outcome =
-      factor(randomisation_outcome,
-             levels = 1:13, labels = sprintf("%02d", 1:13)),
+    factor(randomisation_outcome,
+          levels = 1:13, labels = sprintf("%02d", 1:13)),
     date_vaccine_due = lubridate::as_date(date_vaccine_due),
     date_of_vaccination_administration = lubridate::as_date(date_of_vaccination_administration),
-    time_to_vax = date_of_vaccination_administration - date_vaccine_due,
-    time_since_due = ref_date - date_vaccine_due,
+    time_to_vax = difftime(date_of_vaccination_administration, date_vaccine_due, units = "days"),
+    time_since_due = difftime(ref_date, date_vaccine_due, units = "days"),
     vax_past_due = time_since_due > 28,
     on_time = dplyr::case_when(
-      time_to_vax <= 28 ~ 1,
-      time_to_vax > 28 ~ 0,
-      is.na(time_to_vax) & vax_past_due ~ 0,
-      TRUE ~ NA_real_)
+    time_to_vax <= 28 ~ 1,
+    time_to_vax > 28 ~ 0,
+    is.na(time_to_vax) & vax_past_due ~ 0,
+    TRUE ~ NA_real_)
   )
+
   return(dat)
 }
 
@@ -127,6 +146,19 @@ aggregate_data <- function(dat) {
         randomisation_outcome, current_eligible_vaccination),
       y = sum(on_time), trials = dplyr::n()),
   randomisation_outcome, current_eligible_vaccination))
+
+  # following is maybe clearer?
+  # bagg_dat <- dat %>% dplyr::filter(!is.na(on_time)) %>%
+  #   dplyr::group_by(randomisation_outcome, current_eligible_vaccination) %>%
+  #   dplyr::summarise(y = sum(on_time), trials = dplyr::n()) %>%
+  #   dplyr::arrange(randomisation_outcome, current_eligible_vaccination) %>%
+  #   dplyr::ungroup()
+  #
+  # identical(agg_dat, bagg_dat)
+
+  # use getter rather than ref direct?
+  # r cannot do singleton pattern but can do Memoization caching or R6
+  # probably overkill for the size of data you are referencing could just
   dplyr::left_join(agg_dat, automaticr:::intervention_map, by = "randomisation_outcome")
 }
 
@@ -273,4 +305,21 @@ write_allocation_sequence <- function(file, alloc_seq, interim) {
   readr::write_csv(seq_dat, file)
   message(paste("New allocation sequence written to", file))
   return(invisible(NULL))
+}
+
+
+
+#' Read interim log file.
+#'
+#' @param file Path to interim log.
+#'
+#' @return A \code{data.table} of interim log.
+#' @export
+read_interim_log <- function(file) {
+  if(!file.exists(file)) {
+    warning(paste(file, "not found. Exiting session."))
+    quit(status = 0)
+  } else {
+    return(readr::read_csv(file))
+  }
 }

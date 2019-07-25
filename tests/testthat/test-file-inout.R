@@ -3,7 +3,7 @@ context("File input and output")
 tmp <- tempfile()
 tmp_interim <- tempfile()
 tmp_alloc <- tempfile()
-sim_dat <- generate_trial_data(1000, round(runif(0:9999)))
+sim_dat <- generate_trial_data(1000, sample(0:999, size = 1))
 
 setup({
   write.csv(sim_dat, tmp, row.names = F)
@@ -21,13 +21,13 @@ test_that("read/process/aggregate accumulating data", {
   proc_dat <- process_raw_data(dat, Sys.Date())
   expect_equal(nrow(dat), nrow(sim_dat))
 
-  agg_dat <- aggregate_data(proc_dat)
+  agg_dat <- aggregate_data(dat = proc_dat)
 })
 
 test_that("read/write/update interim log", {
-  expect_error(read_interim_log(tmp_interim), "not found")
+  expect_error(read_interim_log(file = tmp_interim), "not found")
 
-  init_interim_log(tmp_interim)
+  init_interim_log(file = tmp_interim)
   expect_error(init_interim_log(tmp_interim), "already exists")
 
   interim_log <- read_interim_log(tmp_interim)

@@ -22,6 +22,7 @@ Imports:
     dplyr,
     tidyr,
     brms,
+    memoise,
     lubridate
 RoxygenNote: 6.1.1
 Biarch: true

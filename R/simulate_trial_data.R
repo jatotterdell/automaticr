@@ -23,6 +23,8 @@ generate_trial_data <- function(n, seed) {
   vax_date[vax_date >= Sys.Date()] <- "null"
   tibble::tibble(
     parent_id = sample(L, n, replace = TRUE),
+    # so child and clinic id can be same as parent id? or these are just
+    # dummy values that we do not rely on?
     child_id = sample(L, n, replace = TRUE),
     clinic_id = sample(L, n, replace = TRUE),
     parent_postcode = sample(6000:6999, n, replace = TRUE),
