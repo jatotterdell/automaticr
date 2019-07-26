@@ -10,18 +10,47 @@ test_that("prob_best works", {
 
   mat <- MASS::mvrnorm(1000, mu = c(1, rep(0, 9)), Sigma = diag(1, 10, 10))
   pb_mat <- prob_best(mat)
-  expect_equal(all(rep(pb_mat[1], 9) > pb_mat[2:10]), T)
+  expect_equal(all(pb_mat[1] > pb_mat[2:10]), T)
 
   mat <- MASS::mvrnorm(1000, mu = c(rep(0, 4), 1, rep(0, 5)), Sigma = diag(1, 10, 10))
   pb_mat <- prob_best(mat)
-  expect_equal(all(rep(pb_mat[5], 9) > c(pb_mat[1:4], pb_mat[6:10])), T)
+  expect_equal(all(pb_mat[5] > c(pb_mat[1:4], pb_mat[6:10])), T)
 
   mat <- MASS::mvrnorm(1000, mu = c(rep(0, 9), 1), Sigma = diag(1, 10, 10))
   pb_mat <- prob_best(mat)
-  expect_equal(all(rep(pb_mat[10], 9) > pb_mat[1:9]), T)
+  expect_equal(all(pb_mat[10] > pb_mat[1:9]), T)
 
 })
 
+test_that("prob_rank works", {
+
+  mat <- MASS::mvrnorm(1000, mu = c(1, 2, 3, 4), Sigma = diag(1, 4, 4))
+  pr <- prob_rank(mat)
+
+  expect_equal(all(pr[1,4] > pr[1, 1:3]), T)
+  expect_equal(all(pr[2,3] > pr[2, c(1, 2, 4)]), T)
+  expect_equal(all(pr[3,2] > pr[3, c(1, 3, 4)]), T)
+  expect_equal(all(pr[4,1] > pr[4, c(2, 3, 4)]), T)
+
+})
+
+test_that("prob_all_noninferior works", {
+
+  mat <- MASS::mvrnorm(1000, mu = c(1.2, 1, 1, 1), Sigma = diag(1, 4, 4))
+  pr1 <- prob_all_noninferior(mat, mat[,1], 0.5)
+  pr2 <- prob_all_noninferior(mat, mat[,1], 0.1)
+  # larger noninferiority margin for 1 than 2
+  expect_gt(pr1, pr2)
+
+  mat1 <- MASS::mvrnorm(1000, mu = c(1.2, 1, 1, 1), Sigma = diag(1, 4, 4))
+  mat2 <- MASS::mvrnorm(1000, mu = c(1.4, 1, 1, 1), Sigma = diag(1, 4, 4))
+  pr1 <- prob_all_noninferior(mat1, mat1[,1], 0.3)
+  pr2 <- prob_all_noninferior(mat2, mat2[,1], 0.3)
+  # smaller mean for 1 than 2
+  expect_gt(pr1, pr2)
+
+
+})
 
 
 test_that("brar", {
