@@ -39,3 +39,12 @@ get_interim_schedule <- function() {
 get_interim_seeds <- function(interim) {
   automaticr:::interim_schedule[interim, c("alloc_seed", "stan_seed")]
 }
+
+
+#' Return a matrix giving the model design
+#'
+#' @return A design matrix
+#' @export
+get_design_matrix <- function() {
+  automaticr:::design_matrix
+}

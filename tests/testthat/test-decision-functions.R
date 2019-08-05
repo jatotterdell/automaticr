@@ -66,11 +66,11 @@ test_that("brar", {
   expect_equal(sum(new_probs), 1, tolerance = 0.001)
   expect_equal(new_probs[10], 0, tolerance = 0.001)
   expect_equal(new_probs[1], 0.1, tolerance = 0.001)
-  expect_equal(all(rep(new_probs[2], 9) > c(new_probs[1], new_probs[3:10])))
+  expect_equal(all(rep(new_probs[2], 9) > c(new_probs[1], new_probs[3:10])), TRUE)
 
 
   # assess brar updates all should be approx the same
-  mat <- MASS::mvrnorm(1000, mu = rep(1, 10), Sigma = diag(1, 10, 10))
+  mat <- MASS::mvrnorm(1000, mu = rep(1, 10), Sigma = diag(1, 10))
   pb_mat <- prob_best(mat)
   pb_var <- diag(var(mat))
   ss <- rep(100, 10)
