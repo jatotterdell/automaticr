@@ -4,12 +4,14 @@
 \alias{generate_trial_data}
 \title{Create simulated data for testing purposes}
 \usage{
-generate_trial_data(n, seed)
+generate_trial_data(n, seed, effect = seq(1/35, 1/28, length.out = 13))
 }
 \arguments{
 \item{n}{Number of rows to simulate.}
 
 \item{seed}{Seed for PRNG.}
+
+\item{effect}{Rate used to generate exponential RV as offset on vax_due, see details.}
 }
 \value{
 A \code{data.frame} of simulated data.
@@ -17,4 +19,18 @@ A \code{data.frame} of simulated data.
 \description{
 Ideally this will cover all error/coding issues we
 might expect to see so we can check our handling
+}
+\details{
+\itemize{
+\item Currently we compute the date on which the vaccination took place as
+the due-date plus some offset governed by a draw from an exponential
+distribution parameterised with rates from passed in by the calling
+function. Defaults to linear declining mean (1/rate) from 35 to 28 days.
+If the computed vaccination date occurs after the current date, it is
+set to 'null'.
+\item All other stochastic elements (vaccination due date, randomisation arm,
+current vaccination type etc) are obtained via simple random sample with
+replacement. Vax due-date is sampled from 90 days prior to the current date
+up to the current date.
+}
 }

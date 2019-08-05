@@ -10,6 +10,8 @@ init_interim_log(file)
 \item{file}{The path for the interim log file}
 }
 \description{
-Intialises the interim log based on \code{trial_params}.
+Intialises the interim log based on \code{trial_params} setting
+dates, number of treatment arms and initial randomisation
+probabilities.
 Should only be called on first build.
 }

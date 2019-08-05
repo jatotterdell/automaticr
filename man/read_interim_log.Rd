@@ -5,13 +5,21 @@
 \title{Read interim log file.}
 \usage{
 read_interim_log(file)
+
+read_interim_log(file)
 }
 \arguments{
+\item{file}{Path to interim log.}
+
 \item{file}{Path to interim log.}
 }
 \value{
 A \code{data.table} of interim log.
+
+A \code{data.table} of interim log.
 }
 \description{
+Read interim log file.
+
 Read interim log file.
 }
