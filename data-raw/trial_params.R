@@ -1,5 +1,7 @@
 trial_params <- list(
   n_arms = 13,
+  n_messages = 4,
+  n_timings = 3,
   sup_thres = 0.95,
   zero_alloc_thres = 0.01,
   fix_ctrl_alloc = 1/13,
@@ -25,6 +27,7 @@ intervention_map <- data.frame(
   timing = c(0, rep(1:3, times = 4)),
   arm = 0:12
 )
+
 
 X = cbind(c(1, rep(0, 12)), c(0, rep(1, 12)))
 colnames(X) <- c("ctr", "trt")

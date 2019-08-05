@@ -16,7 +16,7 @@ read_interim_log(file)
 \value{
 A \code{data.table} of interim log.
 
-A \code{data.table} of interim log.
+A \code{tibble} of interim log.
 }
 \description{
 Read interim log file.

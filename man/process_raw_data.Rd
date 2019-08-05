@@ -13,7 +13,7 @@ process_raw_data(raw_dat, ref_date)
 This should probably be the date on which the function was called, i.e. \code{Sys.Date()}.}
 }
 \value{
-A \code{data.table}.
+A \code{tibble}.
 }
 \description{
 Needs to check raw data for any coding issues etc.

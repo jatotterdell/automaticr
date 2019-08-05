@@ -9,12 +9,13 @@
 #'
 #' @return NULL
 #' @export
+#'
+#' @importFrom dplyr %>%
 init_interim_log <- function(file) {
   if(file.exists(file)) {
     stop("File already exists.")
   }
-  # general will 'message' get logged in file?
-  message(paste("Initialising", file))
+  warning(paste("Initialising", file))
 
   tb <- tibble::tibble(
     interim_date = Sys.Date(),
@@ -23,29 +24,12 @@ init_interim_log <- function(file) {
     arm          = sprintf("%02d", 1:automaticr:::trial_params$n_arms),
     alloc_prob   = automaticr:::trial_params$init_allocations,
     is_alloc     = TRUE
-  )
+  ) %>%
+    tidyr::gather(variable, value, -(interim_date:arm)) %>%
+    tidyr::unite(temp, variable, arm) %>%
+    tidyr::spread(temp, value)
 
-  tb <- tidyr::spread(
-    tidyr::unite(
-      tidyr::gather(tb, variable, value, -(interim_date:arm)),
-      temp, variable, arm),
-  temp, value)
   readr::write_csv(tb, file)
-
-  # clearer alternative?
-  # tbalt <- tibble::tibble(
-  #   interim_date = Sys.Date(),
-  #   interim_num  = 0,
-  #   nrow_data    = 0,
-  #   arm          = sprintf("%02d", 1:automaticr:::trial_params$n_arms),
-  #   alloc_prob   = automaticr:::trial_params$init_allocations,
-  #   is_alloc     = TRUE
-  # ) %>%
-  #   tidyr::gather(variable, value, -(interim_date:arm)) %>%
-  #   tidyr::unite(temp, variable, arm) %>%
-  #   tidyr::spread(temp, value)
-  #
-  # identical(tb, tbalt)
 
   return(invisible(NULL))
 }
@@ -82,7 +66,7 @@ read_raw_data <- function(file) {
 #' @param ref_date The reference date from which to calculate how much time has passed since the vaccine due date.
 #'   This should probably be the date on which the function was called, i.e. \code{Sys.Date()}.
 #'
-#' @return A \code{data.table}.
+#' @return A \code{tibble}.
 #' @export
 process_raw_data <- function(raw_dat, ref_date) {
   # raw_dat = dat
@@ -126,12 +110,9 @@ process_raw_data <- function(raw_dat, ref_date) {
 #'   due vaccination.
 #' @export
 get_index_data <- function(dat) {
-  # james, this seems to be your preferred idiom for dplyr
-  # is there a perf advantage of using this struct or is it
-  # simply personal pref? i find the %>% approach clearer because it
-  # lets me see the processing sequentially and in order of
-  # execution
-  dplyr::top_n(dplyr::group_by(dat, parent_id), 1, date_vaccine_due)
+  dat %>%
+    dplyr::group_by(parent_id) %>%
+    dplyr::top_n(1, date_vaccine_due)
 }
 
 
@@ -146,27 +127,20 @@ get_index_data <- function(dat) {
 #' @return A \code{tibble} of aggregated data from \code{dat}.
 #' @export
 aggregate_data <- function(dat) {
-  agg_dat <- dplyr::ungroup(dplyr::arrange(
-    dplyr::summarise(
-      dplyr::group_by(
-        dplyr::filter(dat, !is.na(on_time)),
-        randomisation_outcome, current_eligible_vaccination),
-      y = sum(on_time), trials = dplyr::n()),
-  randomisation_outcome, current_eligible_vaccination))
+  # agg_dat <- dplyr::ungroup(dplyr::arrange(
+  #   dplyr::summarise(
+  #     dplyr::group_by(
+  #       dplyr::filter(dat, !is.na(on_time)),
+  #       randomisation_outcome, current_eligible_vaccination),
+  #     y = sum(on_time), trials = dplyr::n()),
+  # randomisation_outcome, current_eligible_vaccination))
 
-  # following is maybe clearer?
-  # bagg_dat <- dat %>% dplyr::filter(!is.na(on_time)) %>%
-  #   dplyr::group_by(randomisation_outcome, current_eligible_vaccination) %>%
-  #   dplyr::summarise(y = sum(on_time), trials = dplyr::n()) %>%
-  #   dplyr::arrange(randomisation_outcome, current_eligible_vaccination) %>%
-  #   dplyr::ungroup()
-  #
-  # identical(agg_dat, bagg_dat)
-
-  # use getter rather than ref direct?
-  # r cannot do singleton pattern but can do Memoization caching or R6
-  # probably overkill for the size of data you are referencing could just
-  dplyr::left_join(agg_dat, automaticr:::intervention_map, by = "randomisation_outcome")
+  agg_dat <- dat %>% dplyr::filter(!is.na(on_time)) %>%
+    dplyr::group_by(randomisation_outcome, current_eligible_vaccination) %>%
+    dplyr::summarise(y = sum(on_time), trials = dplyr::n()) %>%
+    dplyr::arrange(randomisation_outcome, current_eligible_vaccination) %>%
+    dplyr::ungroup()
+  dplyr::left_join(agg_dat, automaticr::get_intervention_map(), by = "randomisation_outcome")
 }
 
 
@@ -180,12 +154,14 @@ make_model_data <- function(agg_dat) {
                      data = agg_dat,
                      contrasts.arg = list(`droplevels(current_eligible_vaccination)` = "contr.sum"))[, -1]
 
+  trial_par <- get_trial_params()
+
   return(list(
     N = length(agg_dat$y),
     K = ncol(X),
-    L1 = 4, # should these hardcoded values be picked up from trial_params.R?
-    L2 = 3,
-    L3 = 12,
+    L1 = trial_par$n_messages,
+    L2 = trial_par$n_timings,
+    L3 = trial_par$n_messages * trial_par$n_timings,
     y = agg_dat$y,
     n = agg_dat$trials,
     X = X,
@@ -290,7 +266,8 @@ update_interim_log <- function(file, date, interim, n_analysed, prob_alloc, is_a
 #' @export
 generate_allocation_sequence <- function(num_alloc, alloc_prob, seed) {
   set.seed(seed)
-  alloc_seq <- sample.int(automaticr:::trial_params$n_arms, num_alloc, prob = alloc_prob, replace = TRUE)
+  trial_par <- get_trial_params()
+  alloc_seq <- sample.int(trial_par$n_arms, num_alloc, prob = alloc_prob, replace = TRUE)
   rm(.Random.seed, envir = .GlobalEnv) # Decouple future RN.
   return(alloc_seq)
 }
@@ -320,7 +297,7 @@ write_allocation_sequence <- function(file, alloc_seq, interim) {
 #'
 #' @param file Path to interim log.
 #'
-#' @return A \code{data.table} of interim log.
+#' @return A \code{tibble} of interim log.
 #' @export
 read_interim_log <- function(file) {
   if(!file.exists(file)) {
