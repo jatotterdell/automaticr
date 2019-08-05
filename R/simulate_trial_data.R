@@ -5,13 +5,27 @@
 #'
 #' @param n Number of rows to simulate.
 #' @param seed Seed for PRNG.
+#' @param effect Rate used to generate exponential RV as offset on vax_due, see details.
+#'
+#' @details
+#' \itemize{
+#' \item Currently we compute the date on which the vaccination took place as
+#' the due-date plus some offset governed by a draw from an exponential
+#' distribution parameterised with rates from passed in by the calling
+#' function. Defaults to linear declining mean (1/rate) from 35 to 28 days.
+#' If the computed vaccination date occurs after the current date, it is
+#' set to 'null'.
+#' \item All other stochastic elements (vaccination due date, randomisation arm,
+#' current vaccination type etc) are obtained via simple random sample with
+#' replacement. Vax due-date is sampled from 90 days prior to the current date
+#' up to the current date.
+#' }
 #'
 #' @return A \code{data.frame} of simulated data.
 #' @importFrom stats rexp
 #' @export
-generate_trial_data <- function(n, seed) {
+generate_trial_data <- function(n, seed, effect = seq(1/35, 1/28, length.out = 13)) {
   set.seed(seed)
-  effect <- seq(1/35, 1/28, length.out = 13)
   l <- expand.grid(0:9, 0:9, 0:9, LETTERS, stringsAsFactors = FALSE)
   L <- apply(l, 1, function(x) paste0(rev(x),  collapse = ''))
   randomisation_outcome <- sample(1:13, n, replace = TRUE)
@@ -20,9 +34,12 @@ generate_trial_data <- function(n, seed) {
                                 ifelse(randomisation_outcome %in% 6:9, -7, 14))
   vax_date <- as.character(vax_due +
                              stats::rexp(n, effect[randomisation_outcome]))
+  # is 'null' what we anticipate from redcap/middleware?
   vax_date[vax_date >= Sys.Date()] <- "null"
   tibble::tibble(
     parent_id = sample(L, n, replace = TRUE),
+    # so child and clinic id can be same as parent id? or these are just
+    # dummy values that we do not rely on?
     child_id = sample(L, n, replace = TRUE),
     clinic_id = sample(L, n, replace = TRUE),
     parent_postcode = sample(6000:6999, n, replace = TRUE),

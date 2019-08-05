@@ -2,7 +2,7 @@
 % Please edit documentation in R/functions.R
 \name{get_index_data}
 \alias{get_index_data}
-\title{Return index records for \code{parent_id}}
+\title{Return index records (i.e. first record) for \code{parent_id}}
 \usage{
 get_index_data(dat)
 }
