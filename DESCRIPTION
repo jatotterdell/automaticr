@@ -21,9 +21,10 @@ Imports:
     tibble,
     dplyr,
     tidyr,
-    brms,
+    Matrix,
     memoise,
-    lubridate
+    lubridate,
+    HDInterval
 RoxygenNote: 6.1.1
 Biarch: true
 SystemRequirements: GNU make

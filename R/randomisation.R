@@ -179,17 +179,17 @@ distribute_alloc <- function(w, zero_ind) {
 #' @param pbest Probability arm is best
 #' @param sampsize Current sample size allocated to arm
 #' @param variance Current posterior variance
-#' @param no_alloc_thres Threshold for setting allocation to zero
+#' @param inactive Flag for if an arm should receive zero allocations
 #' @param fix_ctrl Fix allocation to control by this amount
 #'
 #' @return A numeric vector giving the BRAR allocation probabilities
 #' @export
-brar <- function(pbest, sampsize, variance, no_alloc_thres, fix_ctrl = NULL) {
+brar <- function(pbest, sampsize, variance, inactive, fix_ctrl = 1/13) {
   stopifnot(all(pbest >= 0))
   stopifnot(all(sampsize > 0))
   m <- length(pbest)
   r <- sqrt(pbest * variance / sampsize)
-  r[which(pbest < no_alloc_thres)] <- 0
+  r[inactive] <- 0
   w <- r / sum(r)
 
   if(is.null(fix_ctrl)) {

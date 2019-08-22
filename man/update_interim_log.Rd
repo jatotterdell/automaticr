@@ -4,7 +4,7 @@
 \alias{update_interim_log}
 \title{Update the interim log file}
 \usage{
-update_interim_log(file, date, interim, n_analysed, prob_alloc, is_alloc)
+update_interim_log(file, date, interim, n_analysed, prob_alloc, inactive)
 }
 \arguments{
 \item{file}{The path to the interim log file}

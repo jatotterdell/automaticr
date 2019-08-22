@@ -16,13 +16,13 @@ init_interim_log <- function(file) {
     stop("File already exists.")
   }
   warning(paste("Initialising", file))
-
+  pars <- automaticr::get_trial_params()
   tb <- tibble::tibble(
     interim_date = Sys.Date(),
     interim_num  = 0,
-    nrow_data    = 0,
-    arm          = sprintf("%02d", 1:automaticr:::trial_params$n_arms),
-    alloc_prob   = automaticr:::trial_params$init_allocations,
+    n_analysed    = 0,
+    arm          = sprintf("%02d", 1:pars$n_arms),
+    alloc_prob   = pars$init_allocations,
     is_alloc     = TRUE
   ) %>%
     tidyr::gather(variable, value, -(interim_date:arm)) %>%
@@ -143,6 +143,18 @@ aggregate_data <- function(dat) {
   dplyr::left_join(agg_dat, automaticr::get_intervention_map(), by = "randomisation_outcome")
 }
 
+#' Eigen-decompose a constraining prior to create identifiable parameters
+#'
+#' @param X The design matrix
+#' @param S The constraint matrix
+#' @return The constrained design matrix
+#' @export
+constrain_design <- function(X, S) {
+  d <- ncol(X)
+  r <- Matrix::rankMatrix(S)
+  return(X %*% eigen(S)$vector[, 1:r])
+}
+
 
 #' Make data list for input into Stan model
 #'
@@ -150,25 +162,27 @@ aggregate_data <- function(dat) {
 #' @return A list of data for input int \code{rstan::sampling}.
 #' @export
 make_model_data <- function(agg_dat) {
-  X <- model.matrix( ~ droplevels(current_eligible_vaccination),
-                     data = agg_dat,
-                     contrasts.arg = list(`droplevels(current_eligible_vaccination)` = "contr.sum"))[, -1]
+  W <- model.matrix( ~ 0 + droplevels(current_eligible_vaccination), data = agg_dat)
+  Sw <- diag(1, ncol(W)) - 1 / ncol(W)
+  W_con <- constrain_design(W, Sw)
 
-  trial_par <- get_trial_params()
+  des <- automaticr::get_design()
+  # Rows of design matrix ordered by arm number,
+  # so just repeat the appropriate number of times
+  X <- des$X[dplyr::pull(agg_data, arm) + 1, ]
 
   return(list(
     N = length(agg_dat$y),
     K = ncol(X),
-    L1 = trial_par$n_messages,
-    L2 = trial_par$n_timings,
-    L3 = trial_par$n_messages * trial_par$n_timings,
+    L = ncol(W_con),
+    M = nrow(des$Q),
+    X = X,
+    W = W_con,
+    Xpred = des$X,
+    Q = des$Q,
     y = agg_dat$y,
     n = agg_dat$trials,
-    X = X,
-    control = agg_dat$control,
-    message = agg_dat$message,
-    timing = agg_dat$timing,
-    arm = agg_dat$arm,
+    S = des$S,
     prior_only = 0)
   )
 }
@@ -181,21 +195,26 @@ make_model_data <- function(agg_dat) {
 #' @return A \code{tibble} giving posterior quantities of interest for each arm.
 #' @export
 get_posterior_quantities <- function(draws, sampsize) {
+  pars <- automaticr::get_trial_params()
   arm_post_summ <- tibble(
-    sampsize =sampsize,
+    arm = 0:(pars$n_arms - 1),
+    sampsize = sampsize,
     mean = apply(draws, 2, mean),
     variance = diag(var(draws)),
-    pbest = prob_best(draws)
-  )
-  arm_post_summ <- dplyr::mutate(
-    arm_post_summ,
-    alloc_prob = brar(
-      pbest,
-      sampsize,
-      variance,
-      automaticr:::trial_params$zero_alloc_thres,
-      automaticr:::trial_params$fix_ctrl_alloc),
-    is_alloc = as.numeric(alloc_prob > 0))
+    pbest = prob_best(draws),
+    pbesttrt = c(NA, prob_best(draws[, -1])),
+    pbeatctr = c(NA, col_comp(draws, 1, pars$delta)),
+    inactive = c(FALSE, pbeatctr[-1] < pars$inactive_thres_ctr | pbest[-1] < pars$inactive_thres_sup),
+    alloc_prob = automaticr::brar(pbest, sampsize, variance, inactive, pars$fix_ctrl_alloc)
+  ) %>%
+  bind_cols(as_tibble(t(HDInterval::hdi(draws))))
+  # arm_post_summ <- dplyr::mutate(
+  #   arm_post_summ,
+  #   alloc_prob = brar(
+  #     pbest,
+  #     sampsize,
+  #     variance),
+  #   is_alloc = as.numeric(alloc_prob > 0))
   return(arm_post_summ)
 }
 
@@ -232,19 +251,20 @@ read_interim_log <- function(file) {
 #'
 #' @return NULL
 #' @export
-update_interim_log <- function(file, date, interim, n_analysed, prob_alloc, is_alloc) {
+update_interim_log <- function(file, date, interim, n_analysed, prob_alloc, inactive) {
   if(!file.exists(file)) {
     warning(paste(file, "not found. Exiting session."))
     quit(status = 0)
   }
 
+  pars <- automaticr::get_trial_params()
   tb <- tibble::tibble(
     interim_date = date,
     interim_num  = interim,
-    nrow_data    = n_analysed,
-    arm          = sprintf("%02d", 1:automaticr:::trial_params$n_arms),
+    n_analysed    = n_analysed,
+    arm          = sprintf("%02d", 1:pars$n_arms),
     alloc_prob   = prob_alloc,
-    is_alloc     = is_alloc
+    inactive     = inactive
   )
   tb <- tidyr::spread(
     tidyr::unite(
@@ -266,7 +286,7 @@ update_interim_log <- function(file, date, interim, n_analysed, prob_alloc, is_a
 #' @export
 generate_allocation_sequence <- function(num_alloc, alloc_prob, seed) {
   set.seed(seed)
-  trial_par <- get_trial_params()
+  trial_par <- automaticr::get_trial_params()
   alloc_seq <- sample.int(trial_par$n_arms, num_alloc, prob = alloc_prob, replace = TRUE)
   rm(.Random.seed, envir = .GlobalEnv) # Decouple future RN.
   return(alloc_seq)
@@ -283,27 +303,10 @@ generate_allocation_sequence <- function(num_alloc, alloc_prob, seed) {
 #' @export
 write_allocation_sequence <- function(file, alloc_seq, interim) {
   seq_dat <- tibble::tibble(
-    seq_id = sprintf("%02d_%04d", interim, 1:length(alloc_seq)),
-    randomisation_outcome = alloc_seq
+    TRTNO = sprintf("%02d_%04d", interim, 1:length(alloc_seq)),
+    RANDOMISATION_OUTCOME = alloc_seq
   )
   readr::write_csv(seq_dat, file)
   message(paste("New allocation sequence written to", file))
   return(invisible(NULL))
-}
-
-
-
-#' Read interim log file.
-#'
-#' @param file Path to interim log.
-#'
-#' @return A \code{tibble} of interim log.
-#' @export
-read_interim_log <- function(file) {
-  if(!file.exists(file)) {
-    warning(paste(file, "not found. Exiting session."))
-    quit(status = 0)
-  } else {
-    return(readr::read_csv(file))
-  }
 }

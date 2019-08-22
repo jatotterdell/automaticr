@@ -4,7 +4,7 @@
 \alias{brar}
 \title{Bayesian response adaptive randomisation}
 \usage{
-brar(pbest, sampsize, variance, no_alloc_thres, fix_ctrl = NULL)
+brar(pbest, sampsize, variance, inactive, fix_ctrl = 1/13)
 }
 \arguments{
 \item{pbest}{Probability arm is best}
@@ -13,7 +13,7 @@ brar(pbest, sampsize, variance, no_alloc_thres, fix_ctrl = NULL)
 
 \item{variance}{Current posterior variance}
 
-\item{no_alloc_thres}{Threshold for setting allocation to zero}
+\item{inactive}{Flag for if an arm should receive zero allocations}
 
 \item{fix_ctrl}{Fix allocation to control by this amount}
 }

@@ -7,10 +7,13 @@ get_trial_params <- function() {
     n_arms = 13,
     n_messages = 4,
     n_timings = 3,
-    sup_thres = 0.95,
-    zero_alloc_thres = 0.01,
+    best_thres = 0.9,
+    beat_ctr_thres = 0.999,
+    inactive_thres_ctr = 0.01,
+    inactive_thres_sup = 0.01,
     fix_ctrl_alloc = 1/13,
-    init_allocations = rep(1/13, 13)
+    init_allocations = rep(1/13, 13),
+    delta = 0.1
   )
   return(trial_params)
 }
@@ -41,10 +44,10 @@ get_interim_seeds <- function(interim) {
 }
 
 
-#' Return a matrix giving the model design
+#' Return the trial model design
 #'
-#' @return A design matrix
+#' @return A list of design parameters
 #' @export
-get_design_matrix <- function() {
-  automaticr:::design_matrix
+get_design <- function() {
+  automaticr:::trial_design
 }

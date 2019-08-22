@@ -1,11 +1,26 @@
-trial_params <- list(
-  n_arms = 13,
-  n_messages = 4,
-  n_timings = 3,
-  sup_thres = 0.95,
-  zero_alloc_thres = 0.01,
-  fix_ctrl_alloc = 1/13,
-  init_allocations = rep(1/13, 13)
+# Design matrices
+a <- 4
+b <- 3
+ab <- a*b
+Xa <- kronecker(diag(1, a), rep(1, b))
+Xb <- kronecker(rep(1, a), diag(1, b))
+Xba <- kronecker(unique(Xa), unique(Xb))
+X <- cbind(1, c(0, rep(1, ab)), rbind(0, Xa), rbind(0, Xb), rbind(0, Xba))
+colnames(X) <- c("ctr", "trt", paste0("a", 1:a),
+                 paste0("b", 1:b), c(outer(paste0("b", 1:b), paste0("a", 1:a), paste0)))
+# Constraint matrices
+Sa <- diag(1, a) - 1/a
+Sb <- diag(1, b) - 1/b
+Qa <- eigen(Sa)$vector[, -a]
+Qb <- eigen(Sb)$vector[, -b]
+Qba <- kronecker(Qa, Qb)
+Q <- as.matrix(Matrix::bdiag(1, 1, Qa, Qb, Qba))
+X_con <- X %*% Q
+
+trial_design <- list(
+  X = X_con,
+  Q = Q,
+  S = c(10, 5, rep(2.5, a + b - 2), rep(1, a*b-a-b+1))
 )
 
 interim_schedule <- data.frame(
@@ -52,7 +67,7 @@ design_data <- list(
 design_matrix <- do.call(cbind, list(X, Z1, Z2, Z3))
 
 usethis::use_data(
-  trial_params,
+  trial_design,
   interim_schedule,
   design_data,
   design_matrix,
