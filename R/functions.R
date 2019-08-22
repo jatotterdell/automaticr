@@ -20,10 +20,10 @@ init_interim_log <- function(file) {
   tb <- tibble::tibble(
     interim_date = Sys.Date(),
     interim_num  = 0,
-    n_analysed    = 0,
+    n_analysed   = 0,
     arm          = sprintf("%02d", 1:pars$n_arms),
     alloc_prob   = pars$init_allocations,
-    is_alloc     = TRUE
+    inactive     = 0
   ) %>%
     tidyr::gather(variable, value, -(interim_date:arm)) %>%
     tidyr::unite(temp, variable, arm) %>%
@@ -44,7 +44,7 @@ init_interim_log <- function(file) {
 read_raw_data <- function(file) {
   if(!file.exists(file)) {
     warning(paste(file, "file not found."))
-    quit(status = 0)
+    quit(status = 1)
   } else {
     dat <- readr::read_csv(
       file,
@@ -52,7 +52,6 @@ read_raw_data <- function(file) {
   }
   if(nrow(dat) == 0) {
     warning(paste(file, "has no records."))
-    quit(status = 0)
   }
   return(dat)
 }
@@ -127,15 +126,9 @@ get_index_data <- function(dat) {
 #' @return A \code{tibble} of aggregated data from \code{dat}.
 #' @export
 aggregate_data <- function(dat) {
-  # agg_dat <- dplyr::ungroup(dplyr::arrange(
-  #   dplyr::summarise(
-  #     dplyr::group_by(
-  #       dplyr::filter(dat, !is.na(on_time)),
-  #       randomisation_outcome, current_eligible_vaccination),
-  #     y = sum(on_time), trials = dplyr::n()),
-  # randomisation_outcome, current_eligible_vaccination))
 
-  agg_dat <- dat %>% dplyr::filter(!is.na(on_time)) %>%
+  agg_dat <- dat %>%
+    dplyr::filter(vax_past_due) %>%
     dplyr::group_by(randomisation_outcome, current_eligible_vaccination) %>%
     dplyr::summarise(y = sum(on_time), trials = dplyr::n()) %>%
     dplyr::arrange(randomisation_outcome, current_eligible_vaccination) %>%
