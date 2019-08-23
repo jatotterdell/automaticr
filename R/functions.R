@@ -48,7 +48,19 @@ read_raw_data <- function(file) {
   } else {
     dat <- readr::read_csv(
       file,
-      na = c("null", "NA", ""))
+      na = c("null", "NA", ""),
+      col_types = c(
+        .default = "c",
+        child_date_of_birth = "D",
+        parent_postcode = "i",
+        date_vaccine_due = "D",
+        date_vaccine_due_clean = "D",
+        expected_date_sms_sent = "D",
+        expected_date_sms_sent_clean = "D",
+        actual_date_sms_sent = "D",
+        actual_date_sms_sent_clean = "D",
+        date_of_vaccination_administration = "D"
+      ))
   }
   if(nrow(dat) == 0) {
     warning(paste(file, "has no records."))
@@ -88,10 +100,10 @@ process_raw_data <- function(raw_dat, ref_date) {
     time_since_due = difftime(ref_date, date_vaccine_due, units = "days"),
     vax_past_due = time_since_due > 28,
     on_time = dplyr::case_when(
-    time_to_vax <= 28 ~ 1,
-    time_to_vax > 28 ~ 0,
-    is.na(time_to_vax) & vax_past_due ~ 0,
-    TRUE ~ NA_real_)
+      time_to_vax <= 28 ~ 1,
+      time_to_vax > 28 ~ 0,
+      is.na(time_to_vax) & vax_past_due ~ 0,
+      TRUE ~ NA_real_)
   )
 
   return(dat)
