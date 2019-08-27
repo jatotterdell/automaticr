@@ -309,7 +309,7 @@ generate_allocation_sequence <- function(num_alloc, alloc_prob, seed) {
 write_allocation_sequence <- function(file, alloc_seq, interim) {
   seq_dat <- tibble::tibble(
     TRTNO = sprintf("%02d_%04d", interim, 1:length(alloc_seq)),
-    BLOCKNO = rep(0, length(alloc_seq)),
+    # BLOCKNO = rep(0, length(alloc_seq)),
     RANDOMISATION_OUTCOME = alloc_seq
   )
   readr::write_csv(seq_dat, file)
