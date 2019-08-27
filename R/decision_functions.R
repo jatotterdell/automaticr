@@ -105,3 +105,25 @@ col_comp <- function(mat, col, eps = 0) {
   out <- colMeans(mat[, -col] > mat[, col] + eps)
   return(out)
 }
+
+#' Calculate the probability that a column is superior to all other columns
+#'
+#' @param mat Matrix of parameter draws
+#' @param col The reference column
+#' @param eps The value for superiority
+#' @return A numeric value
+#' @export
+col_sup <- function(mat, col, eps = 0) {
+  return(mean(mat[, col] > apply(mat[, -col], 1, max) + eps))
+}
+
+
+#' Calculate the probability that each column is superior to all other columns
+#'
+#' @param mat Matrix of parameter draws
+#' @param eps The value for superiority
+#' @return A vector of probabilities
+#' @export
+col_sup_all <- function(mat, eps = 0) {
+  return(sapply(seq_len(ncol(mat)), function(x) col_sup(mat, x, eps)))
+}
