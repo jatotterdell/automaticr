@@ -174,7 +174,7 @@ make_model_data <- function(agg_dat) {
   des <- automaticr::get_design()
   # Rows of design matrix ordered by arm number,
   # so just repeat the appropriate number of times
-  X <- des$X[dplyr::pull(agg_data, arm) + 1, ]
+  X <- des$X[dplyr::pull(agg_dat, arm) + 1, ]
 
   return(list(
     N = length(agg_dat$y),
